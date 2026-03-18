@@ -14,6 +14,7 @@ var rootCmd = &cobra.Command{
 	Long:  "A headless CLI tool that idles Steam games and unlocks achievements automatically, ordered from most common to rarest with randomized timing.",
 }
 
+// Execute runs the root command.
 func Execute() error {
 	return rootCmd.Execute()
 }

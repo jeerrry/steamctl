@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 )
 
@@ -20,12 +19,4 @@ func homeDir() (string, error) {
 		return home, nil
 	}
 	return "", fmt.Errorf("HOME not set")
-}
-
-func steamctlDir() (string, error) {
-	home, err := homeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".steamctl"), nil
 }

@@ -124,15 +124,13 @@ func (c *Config) Save(path string) error {
 		return fmt.Errorf("creating config file: %w", err)
 	}
 
+	defer f.Close()
+
 	enc := toml.NewEncoder(f)
 	if err := enc.Encode(c); err != nil {
-		f.Close()
 		return fmt.Errorf("writing config: %w", err)
 	}
-	if err := f.Close(); err != nil {
-		return fmt.Errorf("closing config file: %w", err)
-	}
-	return nil
+	return f.Close()
 }
 
 // DefaultPath returns ~/.steamctl/config.toml.

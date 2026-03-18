@@ -10,16 +10,19 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+// Config holds the top-level steamctl configuration.
 type Config struct {
 	Steam SteamConfig `toml:"steam"`
 	Games []Game      `toml:"games"`
 }
 
+// SteamConfig holds Steam API credentials.
 type SteamConfig struct {
 	APIKey  string `toml:"api_key"`
 	SteamID string `toml:"steam_id"`
 }
 
+// Game defines per-game idling and achievement unlock settings.
 type Game struct {
 	AppID              int      `toml:"app_id"`
 	Name               string   `toml:"name"`
@@ -35,6 +38,7 @@ type Duration struct {
 	time.Duration
 }
 
+// UnmarshalText parses a duration string like "30h" or "10m".
 func (d *Duration) UnmarshalText(text []byte) error {
 	var err error
 	d.Duration, err = time.ParseDuration(string(text))
@@ -44,10 +48,12 @@ func (d *Duration) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// MarshalText encodes the duration as a string.
 func (d Duration) MarshalText() ([]byte, error) {
 	return []byte(d.Duration.String()), nil
 }
 
+// Load reads and validates a TOML config file. If path is empty, the default path is used.
 func Load(path string) (*Config, error) {
 	if path == "" {
 		var err error
@@ -117,11 +123,14 @@ func (c *Config) Save(path string) error {
 	if err != nil {
 		return fmt.Errorf("creating config file: %w", err)
 	}
-	defer f.Close()
 
 	enc := toml.NewEncoder(f)
 	if err := enc.Encode(c); err != nil {
+		f.Close()
 		return fmt.Errorf("writing config: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("closing config file: %w", err)
 	}
 	return nil
 }

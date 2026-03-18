@@ -121,7 +121,7 @@ type AppDetails struct {
 func (c *Client) GetAppDetails(ctx context.Context, appID int) (*AppDetails, error) {
 	u := fmt.Sprintf("%s/api/appdetails?appids=%d", c.storeBaseURL, appID)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("build request: %w", err)
 	}
@@ -130,16 +130,16 @@ func (c *Client) GetAppDetails(ctx context.Context, appID int) (*AppDetails, err
 	if err != nil {
 		return nil, fmt.Errorf("get app details for %d: %w", appID, err)
 	}
-	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
 	if err != nil {
 		return nil, fmt.Errorf("read app details response: %w", err)
 	}
 
 	// Response is keyed by appid string: {"12345": {"success": true, "data": {...}}}
 	var raw map[string]struct {
-		Success bool      `json:"success"`
+		Success bool `json:"success"`
 		Data    *struct {
 			Name string `json:"name"`
 			Type string `json:"type"`
@@ -163,7 +163,7 @@ func (c *Client) GetAppDetails(ctx context.Context, appID int) (*AppDetails, err
 func (c *Client) get(ctx context.Context, path string, params url.Values, dst any) error {
 	u := c.baseURL + path + "?" + params.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return fmt.Errorf("build request: %w", err)
 	}
@@ -172,14 +172,18 @@ func (c *Client) get(ctx context.Context, path string, params url.Values, dst an
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("read response: %w", err)
+	}
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("steam API %s: status %d: %s", path, resp.StatusCode, body)
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(dst); err != nil {
+	if err := json.Unmarshal(body, dst); err != nil {
 		return fmt.Errorf("decode response: %w", err)
 	}
 	return nil

@@ -13,6 +13,10 @@ linters:
     - goimports
 
 linters-settings:
+  errcheck:
+    exclude-functions:
+      - (io.Closer).Close
+      - (net/http.ResponseWriter).Write
   revive:
     rules:
       - name: exported

@@ -71,30 +71,21 @@ func BuildSchedule(
 }
 
 // generateIntervals creates randomized delays that sum to approximately the
-// total time range. Each interval is clamped to [min, max].
-func generateIntervals(n int, total, min, max time.Duration) []time.Duration {
+// total time range. Each interval is clamped to [lo, hi].
+func generateIntervals(n int, total, lo, hi time.Duration) []time.Duration {
 	if n <= 0 {
 		return nil
 	}
 
 	intervals := make([]time.Duration, n)
 
-	// Target average interval
-	avg := total / time.Duration(n)
-	if avg < min {
-		avg = min
-	}
-	if avg > max {
-		avg = max
-	}
-
 	for i := range intervals {
-		jitter := max - min
+		jitter := hi - lo
 		if jitter <= 0 {
-			intervals[i] = min
+			intervals[i] = lo
 			continue
 		}
-		intervals[i] = min + time.Duration(rand.Int64N(int64(jitter)))
+		intervals[i] = lo + time.Duration(rand.Int64N(int64(jitter)))
 	}
 
 	// Scale intervals to fit within total time range
@@ -105,16 +96,14 @@ func generateIntervals(n int, total, min, max time.Duration) []time.Duration {
 
 	if sum > 0 {
 		scale := float64(total) / float64(sum)
-		var adjusted time.Duration
 		for i := range intervals {
 			intervals[i] = time.Duration(float64(intervals[i]) * scale)
-			if intervals[i] < min {
-				intervals[i] = min
+			if intervals[i] < lo {
+				intervals[i] = lo
 			}
-			if intervals[i] > max {
-				intervals[i] = max
+			if intervals[i] > hi {
+				intervals[i] = hi
 			}
-			adjusted += intervals[i]
 		}
 	}
 

@@ -101,16 +101,16 @@ func TestBuildSchedule_IntervalsWithinBounds(t *testing.T) {
 		}
 	}
 
-	min := 5 * time.Minute
-	max := 1 * time.Hour
+	lo := 5 * time.Minute
+	hi := 1 * time.Hour
 
 	schedule := BuildSchedule(
 		global,
 		nil,
 		time.Now(),
 		24*time.Hour,
-		min,
-		max,
+		lo,
+		hi,
 	)
 
 	if len(schedule) != 20 {
@@ -118,11 +118,11 @@ func TestBuildSchedule_IntervalsWithinBounds(t *testing.T) {
 	}
 
 	for i, s := range schedule {
-		if s.DelayAfter < min {
-			t.Errorf("schedule[%d].DelayAfter = %v, below min %v", i, s.DelayAfter, min)
+		if s.DelayAfter < lo {
+			t.Errorf("schedule[%d].DelayAfter = %v, below min %v", i, s.DelayAfter, lo)
 		}
-		if s.DelayAfter > max {
-			t.Errorf("schedule[%d].DelayAfter = %v, above max %v", i, s.DelayAfter, max)
+		if s.DelayAfter > hi {
+			t.Errorf("schedule[%d].DelayAfter = %v, above max %v", i, s.DelayAfter, hi)
 		}
 	}
 }

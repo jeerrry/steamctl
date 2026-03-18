@@ -1,0 +1,27 @@
+[Unit]
+Description=steamctl — Steam game idler and achievement unlocker
+After=network-online.target steam.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/steamctl start
+Restart=on-failure
+RestartSec=30
+
+# Run as your user, not root
+User=%i
+Group=%i
+
+# Environment
+Environment=HOME=/home/%i
+WorkingDirectory=/home/%i
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/%i/.steamctl
+
+[Install]
+WantedBy=multi-user.target

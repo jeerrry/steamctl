@@ -11,9 +11,9 @@ func TestBuildSchedule_SortsByPercentDescending(t *testing.T) {
 	t.Parallel()
 
 	global := []steam.GlobalAchievement{
-		{Name: "RARE", Percent: 5.0},
-		{Name: "COMMON", Percent: 90.0},
-		{Name: "MID", Percent: 50.0},
+		{Name: "RARE", Percent: steam.FlexFloat64(5.0)},
+		{Name: "COMMON", Percent: steam.FlexFloat64(90.0)},
+		{Name: "MID", Percent: steam.FlexFloat64(50.0)},
 	}
 
 	schedule := BuildSchedule(
@@ -43,9 +43,9 @@ func TestBuildSchedule_SkipsUnlocked(t *testing.T) {
 	t.Parallel()
 
 	global := []steam.GlobalAchievement{
-		{Name: "A", Percent: 80.0},
-		{Name: "B", Percent: 60.0},
-		{Name: "C", Percent: 40.0},
+		{Name: "A", Percent: steam.FlexFloat64(80.0)},
+		{Name: "B", Percent: steam.FlexFloat64(60.0)},
+		{Name: "C", Percent: steam.FlexFloat64(40.0)},
 	}
 
 	unlocked := map[string]bool{"A": true, "C": true}
@@ -71,7 +71,7 @@ func TestBuildSchedule_AllUnlocked(t *testing.T) {
 	t.Parallel()
 
 	global := []steam.GlobalAchievement{
-		{Name: "A", Percent: 80.0},
+		{Name: "A", Percent: steam.FlexFloat64(80.0)},
 	}
 
 	unlocked := map[string]bool{"A": true}
@@ -97,7 +97,7 @@ func TestBuildSchedule_IntervalsWithinBounds(t *testing.T) {
 	for i := range global {
 		global[i] = steam.GlobalAchievement{
 			Name:    "ACH_" + string(rune('A'+i)),
-			Percent: float64(100 - i*5),
+			Percent: steam.FlexFloat64(100 - i*5),
 		}
 	}
 
@@ -131,10 +131,10 @@ func TestBuildSchedule_ChronologicalOrder(t *testing.T) {
 	t.Parallel()
 
 	global := []steam.GlobalAchievement{
-		{Name: "A", Percent: 80.0},
-		{Name: "B", Percent: 60.0},
-		{Name: "C", Percent: 40.0},
-		{Name: "D", Percent: 20.0},
+		{Name: "A", Percent: steam.FlexFloat64(80.0)},
+		{Name: "B", Percent: steam.FlexFloat64(60.0)},
+		{Name: "C", Percent: steam.FlexFloat64(40.0)},
+		{Name: "D", Percent: steam.FlexFloat64(20.0)},
 	}
 
 	start := time.Now()

@@ -77,23 +77,39 @@ func TestLoad_ValidationErrors(t *testing.T) {
 		wantErr string
 	}{
 		{
-			name:    "missing api_key",
-			content: "[steam]\nsteam_id = \"123\"\n",
+			name: "missing api_key",
+			content: "[steam]\n" +
+				"steam_id = \"123\"\n",
 			wantErr: "api_key is required",
 		},
 		{
-			name:    "missing steam_id",
-			content: "[steam]\napi_key = \"KEY\"\n",
+			name: "missing steam_id",
+			content: "[steam]\n" +
+				"api_key = \"KEY\"\n",
 			wantErr: "steam_id is required",
 		},
 		{
-			name:    "missing app_id",
-			content: "[steam]\napi_key = \"KEY\"\nsteam_id = \"123\"\n\n[[games]]\nname = \"Test\"\n",
+			name: "missing app_id",
+			content: "[steam]\n" +
+				"api_key = \"KEY\"\n" +
+				"steam_id = \"123\"\n" +
+				"\n" +
+				"[[games]]\n" +
+				"name = \"Test\"\n",
 			wantErr: "app_id is required",
 		},
 		{
-			name:    "min > max interval",
-			content: "[steam]\napi_key = \"KEY\"\nsteam_id = \"123\"\n\n[[games]]\napp_id = 1\nunlock_achievements = true\ntime_range = \"10h\"\nmin_interval = \"3h\"\nmax_interval = \"1h\"\n",
+			name: "min > max interval",
+			content: "[steam]\n" +
+				"api_key = \"KEY\"\n" +
+				"steam_id = \"123\"\n" +
+				"\n" +
+				"[[games]]\n" +
+				"app_id = 1\n" +
+				"unlock_achievements = true\n" +
+				"time_range = \"10h\"\n" +
+				"min_interval = \"3h\"\n" +
+				"max_interval = \"1h\"\n",
 			wantErr: "min_interval must be <= max_interval",
 		},
 	}

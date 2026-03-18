@@ -3,17 +3,15 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
 
-func TestLoad(t *testing.T) {
-	t.Parallel()
-
-	content := `
+const validTOML = `
 [steam]
 api_key = "TESTKEY123"
-steam_id = "76561198000000000"
+steam_id = "00000000000000000"
 
 [[games]]
 app_id = 3764200
@@ -30,9 +28,13 @@ name = "Team Fortress 2"
 idle = true
 unlock_achievements = false
 `
+
+func TestLoad(t *testing.T) {
+	t.Parallel()
+
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.toml")
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(validTOML), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -44,8 +46,8 @@ unlock_achievements = false
 	if cfg.Steam.APIKey != "TESTKEY123" {
 		t.Errorf("APIKey = %q, want TESTKEY123", cfg.Steam.APIKey)
 	}
-	if cfg.Steam.SteamID != "76561198000000000" {
-		t.Errorf("SteamID = %q, want 76561198000000000", cfg.Steam.SteamID)
+	if cfg.Steam.SteamID != "00000000000000000" {
+		t.Errorf("SteamID = %q, want 00000000000000000", cfg.Steam.SteamID)
 	}
 	if len(cfg.Games) != 2 {
 		t.Fatalf("len(Games) = %d, want 2", len(cfg.Games))
@@ -75,47 +77,23 @@ func TestLoad_ValidationErrors(t *testing.T) {
 		wantErr string
 	}{
 		{
-			name: "missing api_key",
-			content: `
-[steam]
-steam_id = "123"
-`,
+			name:    "missing api_key",
+			content: "[steam]\nsteam_id = \"123\"\n",
 			wantErr: "api_key is required",
 		},
 		{
-			name: "missing steam_id",
-			content: `
-[steam]
-api_key = "KEY"
-`,
+			name:    "missing steam_id",
+			content: "[steam]\napi_key = \"KEY\"\n",
 			wantErr: "steam_id is required",
 		},
 		{
-			name: "missing app_id",
-			content: `
-[steam]
-api_key = "KEY"
-steam_id = "123"
-
-[[games]]
-name = "Test"
-`,
+			name:    "missing app_id",
+			content: "[steam]\napi_key = \"KEY\"\nsteam_id = \"123\"\n\n[[games]]\nname = \"Test\"\n",
 			wantErr: "app_id is required",
 		},
 		{
-			name: "min > max interval",
-			content: `
-[steam]
-api_key = "KEY"
-steam_id = "123"
-
-[[games]]
-app_id = 1
-unlock_achievements = true
-time_range = "10h"
-min_interval = "3h"
-max_interval = "1h"
-`,
+			name:    "min > max interval",
+			content: "[steam]\napi_key = \"KEY\"\nsteam_id = \"123\"\n\n[[games]]\napp_id = 1\nunlock_achievements = true\ntime_range = \"10h\"\nmin_interval = \"3h\"\nmax_interval = \"1h\"\n",
 			wantErr: "min_interval must be <= max_interval",
 		},
 	}
@@ -123,6 +101,7 @@ max_interval = "1h"
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			dir := t.TempDir()
 			path := filepath.Join(dir, "config.toml")
 			if err := os.WriteFile(path, []byte(tt.content), 0o644); err != nil {
@@ -133,7 +112,7 @@ max_interval = "1h"
 			if err == nil {
 				t.Fatal("Load() expected error, got nil")
 			}
-			if !contains(err.Error(), tt.wantErr) {
+			if !strings.Contains(err.Error(), tt.wantErr) {
 				t.Errorf("error = %q, want to contain %q", err.Error(), tt.wantErr)
 			}
 		})
@@ -179,17 +158,4 @@ func TestSaveAndLoad(t *testing.T) {
 	if len(loaded.Games) != 1 || loaded.Games[0].AppID != 999 {
 		t.Errorf("unexpected games: %+v", loaded.Games)
 	}
-}
-
-func contains(s, sub string) bool {
-	return len(s) >= len(sub) && searchString(s, sub)
-}
-
-func searchString(s, sub string) bool {
-	for i := 0; i <= len(s)-len(sub); i++ {
-		if s[i:i+len(sub)] == sub {
-			return true
-		}
-	}
-	return false
 }

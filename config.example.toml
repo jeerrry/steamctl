@@ -1,6 +1,6 @@
 [steam]
 api_key = "YOUR_STEAM_WEB_API_KEY"   # https://steamcommunity.com/dev/apikey
-steam_id = "76561198xxxxxxxxx"        # Your 64-bit Steam ID
+steam_id = "YOUR_STEAM_ID_HERE"       # Your 64-bit Steam ID (find at steamid.io)
 
 [[games]]
 app_id = 3764200

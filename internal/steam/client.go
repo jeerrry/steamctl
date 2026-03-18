@@ -87,8 +87,32 @@ func (c *Client) GetPlayerAchievements(ctx context.Context, appID int) ([]Player
 
 // GlobalAchievement represents an achievement's global unlock percentage.
 type GlobalAchievement struct {
-	Name    string  `json:"name"`
-	Percent float64 `json:"percent"`
+	Name    string      `json:"name"`
+	Percent FlexFloat64 `json:"percent"`
+}
+
+// FlexFloat64 handles JSON values that may be a number or a string containing a number.
+type FlexFloat64 float64
+
+// UnmarshalJSON parses both "94.1" and 94.1 as float64.
+func (f *FlexFloat64) UnmarshalJSON(data []byte) error {
+	// Try as number first
+	s := string(data)
+	// Strip quotes if present
+	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
+		s = s[1 : len(s)-1]
+	}
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return fmt.Errorf("invalid float %q: %w", string(data), err)
+	}
+	*f = FlexFloat64(v)
+	return nil
+}
+
+// Float64 returns the underlying float64 value.
+func (f FlexFloat64) Float64() float64 {
+	return float64(f)
 }
 
 // GetGlobalAchievementPercentages returns global unlock percentages for the given app.

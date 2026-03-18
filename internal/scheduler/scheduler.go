@@ -32,10 +32,10 @@ func BuildSchedule(
 	sorted := make([]steam.GlobalAchievement, len(global))
 	copy(sorted, global)
 	slices.SortFunc(sorted, func(a, b steam.GlobalAchievement) int {
-		if a.Percent > b.Percent {
+		if a.Percent.Float64() > b.Percent.Float64() {
 			return -1
 		}
-		if a.Percent < b.Percent {
+		if a.Percent.Float64() < b.Percent.Float64() {
 			return 1
 		}
 		return 0
@@ -60,7 +60,7 @@ func BuildSchedule(
 	for i, a := range pending {
 		schedule[i] = ScheduledUnlock{
 			Name:       a.Name,
-			Percent:    a.Percent,
+			Percent:    a.Percent.Float64(),
 			UnlockAt:   cursor,
 			DelayAfter: intervals[i],
 		}

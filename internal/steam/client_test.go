@@ -92,8 +92,8 @@ func TestGetGlobalAchievementPercentages(t *testing.T) {
 	if len(achs) != 2 {
 		t.Fatalf("len(achievements) = %d, want 2", len(achs))
 	}
-	if achs[0].Percent != 85.5 {
-		t.Errorf("achievements[0].Percent = %f, want 85.5", achs[0].Percent)
+	if achs[0].Percent.Float64() != 85.5 {
+		t.Errorf("achievements[0].Percent = %f, want 85.5", achs[0].Percent.Float64())
 	}
 }
 

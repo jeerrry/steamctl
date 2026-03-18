@@ -1,0 +1,18 @@
+[steam]
+api_key = "YOUR_STEAM_WEB_API_KEY"   # https://steamcommunity.com/dev/apikey
+steam_id = "YOUR_STEAM_ID_HERE"       # Your 64-bit Steam ID (find at steamid.io)
+
+[[games]]
+app_id = 3764200
+name = "RE Requiem"
+idle = true                           # Keep the game "running" to accumulate playtime
+unlock_achievements = true            # Unlock achievements on a schedule
+time_range = "30h"                    # Spread unlocks over this duration
+min_interval = "10m"                  # Minimum wait between unlocks
+max_interval = "2h"                   # Maximum wait between unlocks
+
+# [[games]]
+# app_id = 440
+# name = "Team Fortress 2"
+# idle = true
+# unlock_achievements = false

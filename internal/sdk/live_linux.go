@@ -50,6 +50,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"time"
 	"unsafe"
 )
@@ -138,5 +139,9 @@ func (l *LiveSDK) Close() {
 	}
 	_ = os.Remove("steam_appid.txt")
 	l.initialized = false
+}
+
+func writeAppID(appID uint32) error {
+	return os.WriteFile("steam_appid.txt", []byte(strconv.FormatUint(uint64(appID), 10)), 0o644)
 }
 

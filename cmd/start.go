@@ -11,10 +11,13 @@ import (
 
 	"github.com/jeerrry/steamctl/internal/config"
 	"github.com/jeerrry/steamctl/internal/scheduler"
+	"github.com/jeerrry/steamctl/internal/sdk"
 	"github.com/jeerrry/steamctl/internal/state"
 	"github.com/jeerrry/steamctl/internal/steam"
 	"github.com/spf13/cobra"
 )
+
+var stubMode bool
 
 var startCmd = &cobra.Command{
 	Use:   "start",
@@ -23,6 +26,7 @@ var startCmd = &cobra.Command{
 }
 
 func init() {
+	startCmd.Flags().BoolVar(&stubMode, "stub", false, "Use stub SDK (log unlocks instead of calling Steamworks)")
 	rootCmd.AddCommand(startCmd)
 }
 
@@ -42,6 +46,14 @@ func runStart(*cobra.Command, []string) error {
 		return nil
 	}
 
+	var s sdk.SDK
+	if stubMode {
+		slog.Info("running in stub mode — achievements will be logged, not unlocked")
+		s = sdk.NewStubSDK()
+	} else {
+		s = sdk.NewLiveSDK()
+	}
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
@@ -53,7 +65,7 @@ func runStart(*cobra.Command, []string) error {
 			return nil
 		}
 
-		if err := processGame(ctx, client, st, g); err != nil {
+		if err := processGame(ctx, client, st, s, g); err != nil {
 			slog.Error("processing game", "game", g.Name, "app_id", g.AppID, "err", err)
 			continue
 		}
@@ -63,11 +75,25 @@ func runStart(*cobra.Command, []string) error {
 	return nil
 }
 
-func processGame(ctx context.Context, client *steam.Client, st *state.Store, g config.Game) error {
+func processGame(ctx context.Context, client *steam.Client, st *state.Store, s sdk.SDK, g config.Game) error {
 	slog.Info("processing game", "name", g.Name, "app_id", g.AppID)
 
+	if !g.Idle && !g.UnlockAchievements {
+		slog.Info("idle and achievements both disabled, skipping", "name", g.Name)
+		return nil
+	}
+
+	// Initialize SDK so Steam shows us as "In-Game".
+	if err := s.Init(uint32(g.AppID)); err != nil {
+		return fmt.Errorf("sdk init: %w", err)
+	}
+	defer s.Close()
+
+	// Idle-only: hold the game open until interrupted.
 	if !g.UnlockAchievements {
-		slog.Info("achievement unlocking disabled, skipping", "name", g.Name)
+		slog.Info("idling (no achievement unlocking)", "name", g.Name)
+		<-ctx.Done()
+		slog.Info("stopped idling", "name", g.Name)
 		return nil
 	}
 
@@ -139,12 +165,12 @@ func processGame(ctx context.Context, client *steam.Client, st *state.Store, g c
 		"total_time", g.TimeRange.Duration,
 	)
 
-	for i, s := range schedule {
-		waitDuration := time.Until(s.UnlockAt)
+	for i, sch := range schedule {
+		waitDuration := time.Until(sch.UnlockAt)
 		if waitDuration > 0 {
 			slog.Info("waiting for next unlock",
-				"achievement", s.Name,
-				"percent", fmt.Sprintf("%.2f%%", s.Percent),
+				"achievement", sch.Name,
+				"percent", fmt.Sprintf("%.2f%%", sch.Percent),
 				"wait", waitDuration.Truncate(time.Second),
 			)
 
@@ -152,17 +178,24 @@ func processGame(ctx context.Context, client *steam.Client, st *state.Store, g c
 			case <-ctx.Done():
 				slog.Info("interrupted, saving state")
 				gs.AchievementIndex = len(unlocked) + i
-				gs.NextUnlockAt = s.UnlockAt
+				gs.NextUnlockAt = sch.UnlockAt
 				st.SetGame(gs)
 				return st.Save("")
 			case <-time.After(waitDuration):
 			}
 		}
 
-		// SDK stub: log the unlock instead of calling Steamworks
-		slog.Info("UNLOCK (stub)",
-			"achievement", s.Name,
-			"percent", fmt.Sprintf("%.2f%%", s.Percent),
+		if err := s.UnlockAchievement(sch.Name); err != nil {
+			slog.Error("unlock failed",
+				"achievement", sch.Name,
+				"err", err,
+			)
+			continue
+		}
+
+		slog.Info("unlocked",
+			"achievement", sch.Name,
+			"percent", fmt.Sprintf("%.2f%%", sch.Percent),
 			"index", fmt.Sprintf("%d/%d", i+1, len(schedule)),
 		)
 

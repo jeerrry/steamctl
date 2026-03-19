@@ -2,10 +2,16 @@
 
 A headless CLI tool that idles Steam games and unlocks achievements automatically, ordered from most common to rarest with randomized timing.
 
+## Prerequisites
+
+- **Steam client** must be running on the same machine for real achievement unlocking
+- **Windows**: place `steam_api64.dll` in the same directory as the `steamctl` binary (ships with Steamworks SDK redistributables)
+- **Linux/macOS**: the Go binding embeds `libsteam_api.so`/`.dylib` automatically
+
 ## Install
 
 ```bash
-go install github.com/jeerrry/steamctl@latest
+go install -tags steam github.com/jeerrry/steamctl@latest
 ```
 
 Or build from source:
@@ -13,8 +19,10 @@ Or build from source:
 ```bash
 git clone https://github.com/jeerrry/steamctl.git
 cd steamctl
-go build -o steamctl .
+go build -tags steam -o steamctl .
 ```
+
+> Build without `-tags steam` to get a binary that only supports `--stub` mode (no Steamworks dependency at runtime).
 
 ## Setup
 
@@ -40,8 +48,11 @@ steamctl dry-run
 # Check progress
 steamctl status
 
-# Start the daemon
+# Start the daemon (Steam client must be running)
 steamctl start
+
+# Start in stub mode (log unlocks without Steam)
+steamctl start --stub
 
 # Reset state for a game
 steamctl reset 3764200
@@ -91,14 +102,17 @@ steamctl
 │   ├── config/    — TOML config parsing
 │   ├── state/     — JSON state persistence
 │   ├── steam/     — Steam Web API client
-│   ├── sdk/       — Steamworks SDK bindings (planned)
+│   ├── sdk/       — Steamworks SDK wrapper (go-steamworks)
 │   └── scheduler/ — unlock scheduling logic
 └── main.go
 ```
 
-## Current Status
+## How It Works
 
-This is the initial version with all core logic implemented. Achievement unlocks are currently logged (stub) — actual Steamworks SDK integration via cgo will be added in a future phase.
+1. Fetches achievement metadata via the Steam Web API (global unlock percentages, player progress)
+2. Builds a randomized unlock schedule ordered from most common to rarest
+3. Calls Steamworks SDK (`SetAchievement` + `StoreStats`) at each scheduled time
+4. Persists progress to `~/.steamctl/state.json` so it can resume after interruption
 
 ## License
 
